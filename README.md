@@ -41,9 +41,9 @@ Ensure you have Python 3.10+ installed on your system.
 ### 2. Clone the Repository & Install Dependencies
 Open your terminal or command prompt and run:
 ```bash
-# Clone the repository (replace with your active GitHub link)
-git clone https://github.com/caline-uwingabire/Kigali-Rental-Price-Estimation.git
-cd Kigali-Rental-Price-Estimation
+# Clone the repository
+git clone https://github.com/Uwingabir/kigali-rental-price-estimator.git
+cd kigali-rental-price-estimator
 
 # Create a virtual environment
 python -m venv venv
