@@ -80,7 +80,7 @@ def create_notebook():
         "metadata": {},
         "outputs": [],
         "source": [
-            "csv_path = \"Kigali_Rental_Final_Combined_With_Dataset1.csv\"\n",
+            "csv_path = \"Kigali_Rental_Dataset1.csv\"\n",
             "df = pd.read_csv(csv_path)\n",
             "print(f\"Loaded dataset with {df.shape[0]} rows and {df.shape[1]} columns.\")\n",
             "df.head()"

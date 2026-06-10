@@ -12,7 +12,7 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_sco
 
 def train_and_evaluate():
     # 1. Load the dataset
-    csv_path = "Kigali_Rental_Final_Combined_With_Dataset1.csv"
+    csv_path = "Kigali_Rental_Dataset1.csv"
     print(f"Loading dataset from: {csv_path}...")
     df = pd.read_csv(csv_path)
     

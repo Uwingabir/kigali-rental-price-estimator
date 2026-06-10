@@ -22,7 +22,7 @@ This system addresses this information gap by:
 * `train_model.py`: Script to train and serialize the best-performing machine learning model pipeline.
 * `generate_notebook.py`: Script to programmatically compile the model Jupyter Notebook.
 * `ModelNotebook.ipynb`: The Jupyter Notebook containing the end-to-end data pipeline, visualizations, model comparisons, and evaluations.
-* `Kigali_Rental_Final_Combined_With_Dataset1.csv`: The underlying Kigali housing dataset (5,416 records).
+* `Kigali_Rental_Dataset1.csv`: The underlying Kigali housing dataset (5,416 records).
 * `templates/index.html`: Web interface HTML structure.
 * `static/css/style.css`: Premium glassmorphism design system styles.
 * `static/js/main.js`: Frontend dynamic behavior, API calls, and Chart.js animations.
