@@ -2,7 +2,7 @@ import json
 import os
 
 def create_notebook():
-    notebook_path = "ModelNotebook.ipynb"
+    notebook_path = "Notebook.ipynb"
     print(f"Creating programmatic Jupyter Notebook: {notebook_path}...")
     
     # Define the cells

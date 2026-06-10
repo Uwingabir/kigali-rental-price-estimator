@@ -2,6 +2,8 @@
 
 A Machine Learning-based decision-support system designed to predict and evaluate residential rental prices in Kigali, Rwanda. This project aims to bring transparency and data-driven confidence to tenants, landlords, and real estate agents operating in the Kigali housing market.
 
+🌐 **Live Application**: [https://kigali-rental-price-estimator.onrender.com](https://kigali-rental-price-estimator.onrender.com)
+
 ---
 
 ## 📌 Project Overview
@@ -21,7 +23,7 @@ This system addresses this information gap by:
 * `app.py`: Flask web application backend and prediction API.
 * `train_model.py`: Script to train and serialize the best-performing machine learning model pipeline.
 * `generate_notebook.py`: Script to programmatically compile the model Jupyter Notebook.
-* `ModelNotebook.ipynb`: The Jupyter Notebook containing the end-to-end data pipeline, visualizations, model comparisons, and evaluations.
+* `Notebook.ipynb`: The Jupyter Notebook containing the end-to-end data pipeline, visualizations, model comparisons, and evaluations.
 * `Kigali_Rental_Dataset1.csv`: The underlying Kigali housing dataset (5,416 records).
 * `templates/index.html`: Web interface HTML structure.
 * `static/css/style.css`: Premium glassmorphism design system styles.
@@ -102,16 +104,15 @@ The application is styled using a modern **glassmorphic dark design system** bui
 
 ---
 
-## 🌐 Deployment Plan
+## 🌐 Live Deployment
 
-To host the application online for public access, the following infrastructure plan is recommended:
-
-### Frontend & Backend API (Flask App):
-* **Target Platform**: **Render** (Free Web Services tier) or **Railway**.
+The application is active and deployed online:
+* **Live Link**: [https://kigali-rental-price-estimator.onrender.com](https://kigali-rental-price-estimator.onrender.com)
+* **Hosting Platform**: **Render** (Free Web Service tier)
 * **Configuration**:
-  - Build Command: `pip install -r requirements.txt && python train_model.py && python generate_notebook.py`
-  - Start Command: `gunicorn app:app` (on Render, add `gunicorn` to `requirements.txt`).
-* **Environment Variables**: Set `FLASK_ENV=production` and standard port bindings.
+  - **Build Command**: `pip install -r requirements.txt && python train_model.py`
+  - **Start Command**: `gunicorn app:app`
+  - **Environment Variables**: Set `FLASK_ENV=production` and standard port bindings.
 
 ---
 
@@ -122,7 +123,7 @@ Below is an outline to follow when recording your initial product demonstration 
 | Time | Slide/Section | Script & Demonstration Checklist |
 |---|---|---|
 | **0:00 - 1:00** | Introduction & Problem | Introduce yourself, state the project goal (Kigali rental price estimation), and show the problem slide (housing demand, tenant percentage, and lack of pricing transparency). |
-| **1:00 - 2:30** | Data & ML Pipeline | Show the `ModelNotebook.ipynb`. Briefly scroll through the data distribution histograms, correlation heatmaps, model comparisons (explaining why Random Forest was selected with $R^2 = 0.7808$), and outlier cleaning process. |
+| **1:00 - 2:30** | Data & ML Pipeline | Show the `Notebook.ipynb`. Briefly scroll through the data distribution histograms, correlation heatmaps, model comparisons (explaining why Random Forest was selected with $R^2 = 0.7808$), and outlier cleaning process. |
 | **2:30 - 4:30** | Estimator Live Demo | Show the web app running at `127.0.0.1:5000`. Enter details for an apartment in Kacyiru, predict the range, and input an overpriced/underpriced rent value to show how the pointer on the gauge shifts. |
 | **4:30 - 5:30** | Insights Dashboard | Navigate to the "Market Insights" tab. Point out the live stats and describe the interactive Chart.js visualizations (average rent by neighborhood and distribution by housing type). |
 | **5:30 - 6:00** | Conclusion & Next Steps | Summarize achievements (flawless environment setup, robust model training, and highly interactive UI). Discuss upcoming steps, including remote cloud deployment. |
