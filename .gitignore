@@ -1,0 +1,59 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+.project
+.pydevproject
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Local data or logs
+*.log
+
+# Generated model files (rebuilt by Render on deploy)
+best_model.joblib
+market_stats.joblib
+
+# Generated chart images
+correlation_matrix.png
+feature_importance.png
+location_average_rent.png
+model_comparison.png
+rent_by_property_type.png
+rent_distribution.png
+
+# Research/notebook files (not needed for deployment)
+ModelNotebook.ipynb
+*.ipynb
+
+# Large PDF files
+*.pdf

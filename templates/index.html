@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kigali Rental Price Estimation System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand-section">
+                <div class="logo-container">
+                    <i class="fa-solid fa-house-laptop"></i>
+                </div>
+                <h2>KigaliRent</h2>
+                <span class="badge">ML MVP v1.0</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="estimator">
+                    <i class="fa-solid fa-calculator"></i> Rent Estimator
+                </button>
+                <button class="nav-btn" data-tab="insights">
+                    <i class="fa-solid fa-chart-line"></i> Market Insights
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <p>Designed for Kigali housing price estimation analysis</p>
+                <span class="author">Caline Uwingabire</span>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Header Section -->
+            <header class="content-header">
+                <div>
+                    <h1 id="page-title">Rental Price Estimator</h1>
+                    <p id="page-subtitle" class="text-muted">Enter property features to predict fair market monthly rent in Kigali, Rwanda</p>
+                </div>
+                <div class="header-actions">
+                    <div class="currency-tag">RWF (₣)</div>
+                </div>
+            </header>
+
+            <!-- TAB 1: Rent Estimator -->
+            <section id="estimator-tab" class="tab-panel active">
+                <div class="grid-container">
+                    <!-- Input Form Panel -->
+                    <div class="glass-card form-panel">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-sliders"></i> Property Attributes</h3>
+                            <span class="card-subtitle">Fill in the physical characteristics of the listing</span>
+                        </div>
+                        
+                        <form id="estimator-form">
+                            <!-- Basic Property Details -->
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label for="property_type">Property Type</label>
+                                    <select id="property_type" name="property_type" required>
+                                        <option value="" disabled selected>Select property type</option>
+                                        {% for option in property_types %}
+                                        <option value="{{ option }}">{{ option }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label for="location">Location / Sector</label>
+                                    <select id="location" name="location" required>
+                                        <option value="" disabled selected>Select neighborhood</option>
+                                        {% for loc in locations %}
+                                        <option value="{{ loc }}">{{ loc }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Numeric details -->
+                            <div class="form-row">
+                                <div class="form-group col-4">
+                                    <label for="bedrooms">Bedrooms</label>
+                                    <div class="number-input-wrapper">
+                                        <button type="button" class="qty-btn minus" onclick="adjustValue('bedrooms', -1)">-</button>
+                                        <input type="number" id="bedrooms" name="bedrooms" min="1" max="10" value="3" required>
+                                        <button type="button" class="qty-btn plus" onclick="adjustValue('bedrooms', 1)">+</button>
+                                    </div>
+                                </div>
+                                <div class="form-group col-4">
+                                    <label for="bathrooms">Bathrooms</label>
+                                    <div class="number-input-wrapper">
+                                        <button type="button" class="qty-btn minus" onclick="adjustValue('bathrooms', -1)">-</button>
+                                        <input type="number" id="bathrooms" name="bathrooms" min="1" max="10" value="2" required>
+                                        <button type="button" class="qty-btn plus" onclick="adjustValue('bathrooms', 1)">+</button>
+                                    </div>
+                                </div>
+                                <div class="form-group col-4">
+                                    <label for="amenities_count">Amenities Count</label>
+                                    <div class="number-input-wrapper">
+                                        <button type="button" class="qty-btn minus" onclick="adjustValue('amenities_count', -1)">-</button>
+                                        <input type="number" id="amenities_count" name="amenities_count" min="0" max="15" value="4" required>
+                                        <button type="button" class="qty-btn plus" onclick="adjustValue('amenities_count', 1)">+</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Specifications -->
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label for="furnished_status">Furnished Status</label>
+                                    <select id="furnished_status" name="furnished_status" required>
+                                        {% for opt in furnished_options %}
+                                        <option value="{{ opt }}" {% if opt == 'Unfurnished' %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label for="road_access">Road Access Quality</label>
+                                    <select id="road_access" name="road_access" required>
+                                        {% for opt in road_options %}
+                                        <option value="{{ opt }}" {% if opt == 'Good' %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Binary Amenities -->
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label for="parking">Parking Available</label>
+                                    <select id="parking" name="parking" required>
+                                        {% for opt in parking_options %}
+                                        <option value="{{ opt }}" {% if opt == 'Yes' %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label for="security">Active Security</label>
+                                    <select id="security" name="security" required>
+                                        {% for opt in security_options %}
+                                        <option value="{{ opt }}" {% if opt == 'Yes' %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Optional Listed price for rent comparison -->
+                            <div class="form-group listed-rent-group">
+                                <label for="listed_rent">Evaluate a Specific Price (Optional)</label>
+                                <div class="input-with-icon">
+                                    <span class="input-icon">RWF</span>
+                                    <input type="number" id="listed_rent" name="listed_rent" placeholder="e.g. 500000" min="0" step="5000">
+                                </div>
+                                <span class="form-tip">Enter an active listing rent to assess if it is fair market value</span>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <span class="btn-text">Estimate Price Range</span> <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Results Output Panel -->
+                    <div class="glass-card results-panel" id="results-panel">
+                        <!-- Initial state -->
+                        <div class="results-placeholder" id="results-placeholder">
+                            <div class="placeholder-icon">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                            <h3>Awaiting Input Parameters</h3>
+                            <p>Select the property features and click "Estimate Price Range" to run the Random Forest pricing prediction model.</p>
+                        </div>
+                        
+                        <!-- Prediction Result state (Hidden by default) -->
+                        <div class="results-content hidden" id="results-content">
+                            <div class="card-header centered">
+                                <span class="tag">Estimate Calculated</span>
+                                <h3>Predicted Monthly Rent</h3>
+                            </div>
+                            
+                            <div class="price-output">
+                                <span class="currency">RWF</span>
+                                <span class="amount" id="val-predicted-rent">-</span>
+                                <span class="per-month">/ month</span>
+                            </div>
+
+                            <div class="range-box">
+                                <div class="range-header">
+                                    <span>Estimated Fair Market Range (±12%)</span>
+                                </div>
+                                <div class="range-values">
+                                    <div class="range-boundary">
+                                        <span class="label">Min Rent</span>
+                                        <span class="val" id="val-rent-min">-</span>
+                                    </div>
+                                    <div class="range-divider"></div>
+                                    <div class="range-boundary">
+                                        <span class="label">Max Rent</span>
+                                        <span class="val" id="val-rent-max">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Listed rent evaluation display -->
+                            <div class="listed-evaluation-box hidden" id="listed-evaluation-box">
+                                <h4>Price Assessment Result</h4>
+                                <div class="comparison-status-bar">
+                                    <div class="status-meter" id="comparison-meter">
+                                        <div class="meter-bar"></div>
+                                        <div class="meter-pointer" id="meter-pointer"></div>
+                                        <div class="meter-labels">
+                                            <span>Underpriced</span>
+                                            <span>Fair Market Value</span>
+                                            <span>Overpriced</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="evaluation-detail-text">
+                                    The listed price of <strong id="val-listed-rent">-</strong> is rated <span class="status-tag" id="val-price-status">-</span>. 
+                                    It is <strong id="val-price-diff">-</strong> than the model's estimated average.
+                                </div>
+                            </div>
+                            
+                            <!-- Model info summary -->
+                            <div class="model-meta">
+                                <div class="meta-item">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span>Model: <strong>Random Forest Regressor</strong></span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fa-solid fa-bullseye"></i>
+                                    <span>Cross-Validated $R^2$: <strong>0.7808</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: Market Insights -->
+            <section id="insights-tab" class="tab-panel">
+                <!-- Statistic Summary Cards -->
+                <div class="stats-grid">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon bg-violet">
+                            <i class="fa-solid fa-database"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Cleaned Dataset Size</span>
+                            <h3 class="stat-val" id="stat-total-listings">5,409</h3>
+                            <span class="stat-trend">Total survey and listing records</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon bg-cyan">
+                            <i class="fa-solid fa-tags"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Average Rent (Kigali)</span>
+                            <h3 class="stat-val" id="stat-avg-rent">655,000 RWF</h3>
+                            <span class="stat-trend">Overall dataset mean monthly rent</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon bg-green">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Best Estimator Model</span>
+                            <h3 class="stat-val">Random Forest</h3>
+                            <span class="stat-trend">Lowest MAE and RMSE in testing</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Charts Grid -->
+                <div class="grid-container charts-grid">
+                    <!-- Chart 1: Average Rent by Location -->
+                    <div class="glass-card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-bar"></i> Avg Monthly Rent by Sector</h3>
+                            <span class="card-subtitle">Showing top Kigali locations (in Thousand RWF)</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="locationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Rent by Property Type -->
+                    <div class="glass-card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Property Type Distribution</h3>
+                            <span class="card-subtitle">Proportional breakdown of housing categories</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="propertyTypeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
