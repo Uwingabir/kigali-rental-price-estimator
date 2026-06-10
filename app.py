@@ -7,8 +7,9 @@ import os
 app = Flask(__name__)
 
 # Load model and market stats
-MODEL_PATH = "best_model.joblib"
-STATS_PATH = "market_stats.joblib"
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "best_model.joblib")
+STATS_PATH = os.path.join(BASE_DIR, "market_stats.joblib")
 
 pipeline = None
 market_stats = None
