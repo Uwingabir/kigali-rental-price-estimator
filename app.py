@@ -2,9 +2,18 @@ from flask import Flask, request, jsonify, render_template
 import pandas as pd
 import numpy as np
 import joblib
+import logging
 import os
 
+from flask_cors import CORS
+
 app = Flask(__name__)
+
+# Configure basic logging to STDOUT
+dlogging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logging = logging.getLogger(__name__)
+CORS(app)
+
 
 # Load model and market stats
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -78,6 +87,7 @@ def predict():
         
     try:
         data = request.get_json()
+        logging.info(f"Received prediction request: {data}")
         
         # Extract features and validate inputs
         bedrooms = int(data.get('bedrooms', 1))
