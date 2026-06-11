@@ -4,14 +4,15 @@ import numpy as np
 import joblib
 import logging
 import os
+import sys
 
 from flask_cors import CORS
 
 app = Flask(__name__)
 
 # Configure basic logging to STDOUT
-dlogging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-logging = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger(__name__)
 CORS(app)
 
 
@@ -23,17 +24,47 @@ STATS_PATH = os.path.join(BASE_DIR, "market_stats.joblib")
 pipeline = None
 market_stats = None
 
-if os.path.exists(MODEL_PATH):
-    print(f"Loading trained model pipeline from {MODEL_PATH}...")
-    pipeline = joblib.load(MODEL_PATH)
-else:
-    print(f"WARNING: Trained model not found at {MODEL_PATH}. Run train_model.py first!")
+def train_models_if_needed():
+    """Train models if they don't exist"""
+    global pipeline, market_stats
+    
+    if not os.path.exists(MODEL_PATH) or not os.path.exists(STATS_PATH):
+        logger.info("Model files not found. Training models...")
+        try:
+            from train_model import train_and_evaluate
+            train_and_evaluate()
+            logger.info("Model training completed successfully.")
+        except Exception as e:
+            logger.error(f"Failed to train models: {str(e)}")
+            raise
 
-if os.path.exists(STATS_PATH):
-    print(f"Loading market statistics from {STATS_PATH}...")
-    market_stats = joblib.load(STATS_PATH)
-else:
-    print(f"WARNING: Market statistics not found at {STATS_PATH}. Run train_model.py first!")
+def load_models():
+    """Load trained models and statistics"""
+    global pipeline, market_stats
+    
+    if os.path.exists(MODEL_PATH):
+        try:
+            logger.info(f"Loading trained model pipeline from {MODEL_PATH}...")
+            pipeline = joblib.load(MODEL_PATH)
+            logger.info("Model loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load model: {str(e)}")
+    else:
+        logger.warning(f"Model not found at {MODEL_PATH}")
+
+    if os.path.exists(STATS_PATH):
+        try:
+            logger.info(f"Loading market statistics from {STATS_PATH}...")
+            market_stats = joblib.load(STATS_PATH)
+            logger.info("Market statistics loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load market stats: {str(e)}")
+    else:
+        logger.warning(f"Market statistics not found at {STATS_PATH}")
+
+# Initialize models on startup
+train_models_if_needed()
+load_models()
 
 @app.route('/')
 def home():
@@ -83,11 +114,12 @@ def get_stats():
 @app.route('/api/predict', methods=['POST'])
 def predict():
     if not pipeline:
-        return jsonify({"error": "Prediction model not loaded on server"}), 500
+        logger.error("Prediction model not loaded on server")
+        return jsonify({"error": "Prediction model not loaded on server. Please try again in a moment."}), 500
         
     try:
         data = request.get_json()
-        logging.info(f"Received prediction request: {data}")
+        logger.info(f"Received prediction request: {data}")
         
         # Extract features and validate inputs
         bedrooms = int(data.get('bedrooms', 1))
@@ -100,6 +132,11 @@ def predict():
         parking = data.get('parking', 'Unknown')
         security = data.get('security', 'Unknown')
         road_access = data.get('road_access', 'Unknown')
+        
+        # Validate required fields
+        if not location or not property_type:
+            logger.warning(f"Missing required fields: location={location}, property_type={property_type}")
+            return jsonify({"error": "Location and Property Type are required"}), 400
         
         # User input rent to check (optional)
         listed_rent = data.get('listed_rent')
@@ -119,8 +156,11 @@ def predict():
             'road_access': road_access
         }])
         
+        logger.info(f"Input data prepared: {input_data.to_dict()}")
+        
         # Predict using pipeline
         predicted_val = pipeline.predict(input_data)[0]
+        logger.info(f"Prediction successful: {predicted_val}")
         
         # Post-process predictions: rent cannot be negative
         predicted_rent = max(0.0, float(predicted_val))
@@ -154,12 +194,18 @@ def predict():
             "price_diff_percent": price_diff_percent
         })
         
-    except Exception as e:
-        print(f"Error during prediction: {str(e)}")
+    except ValueError as e:
+        logger.error(f"Value error during prediction: {str(e)}")
         return jsonify({
             "status": "error",
-            "message": f"Invalid inputs or prediction error: {str(e)}"
+            "message": f"Invalid input values: {str(e)}"
         }), 400
+    except Exception as e:
+        logger.error(f"Error during prediction: {str(e)}", exc_info=True)
+        return jsonify({
+            "status": "error",
+            "message": f"Prediction error: {str(e)}"
+        }), 500
 
 if __name__ == '__main__':
     # Run locally on port 5000
