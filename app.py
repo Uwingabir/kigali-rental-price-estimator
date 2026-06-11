@@ -24,56 +24,41 @@ STATS_PATH = os.path.join(BASE_DIR, "market_stats.joblib")
 pipeline = None
 market_stats = None
 
-def train_models_if_needed():
-    """Train models if they don't exist"""
-    global pipeline, market_stats
-    
-    if not os.path.exists(MODEL_PATH) or not os.path.exists(STATS_PATH):
-        logger.info("Model files not found. Training models...")
-        try:
-            import subprocess
-            result = subprocess.run([sys.executable, "train_model.py"], 
-                                  capture_output=True, 
-                                  text=True, 
-                                  cwd=BASE_DIR)
-            if result.returncode != 0:
-                logger.error(f"Training script failed with return code {result.returncode}")
-                logger.error(f"STDOUT: {result.stdout}")
-                logger.error(f"STDERR: {result.stderr}")
-                raise Exception(f"Training failed: {result.stderr}")
-            logger.info("Model training completed successfully.")
-            logger.info(f"Training output: {result.stdout}")
-        except Exception as e:
-            logger.error(f"Failed to train models: {str(e)}", exc_info=True)
-            raise
-
 def load_models():
-    """Load trained models and statistics"""
+    """Load pre-trained models and statistics"""
     global pipeline, market_stats
     
     if os.path.exists(MODEL_PATH):
         try:
             logger.info(f"Loading trained model pipeline from {MODEL_PATH}...")
             pipeline = joblib.load(MODEL_PATH)
-            logger.info("Model loaded successfully.")
+            logger.info("✓ Model loaded successfully.")
         except Exception as e:
-            logger.error(f"Failed to load model: {str(e)}")
+            logger.error(f"Failed to load model: {str(e)}", exc_info=True)
+            raise
     else:
-        logger.warning(f"Model not found at {MODEL_PATH}")
+        logger.error(f"Model file not found at {MODEL_PATH}")
+        raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
 
     if os.path.exists(STATS_PATH):
         try:
             logger.info(f"Loading market statistics from {STATS_PATH}...")
             market_stats = joblib.load(STATS_PATH)
-            logger.info("Market statistics loaded successfully.")
+            logger.info("✓ Market statistics loaded successfully.")
         except Exception as e:
-            logger.error(f"Failed to load market stats: {str(e)}")
+            logger.error(f"Failed to load market stats: {str(e)}", exc_info=True)
+            raise
     else:
-        logger.warning(f"Market statistics not found at {STATS_PATH}")
+        logger.error(f"Market statistics not found at {STATS_PATH}")
+        raise FileNotFoundError(f"Market statistics not found at {STATS_PATH}")
 
-# Initialize models on startup
-train_models_if_needed()
-load_models()
+# Load models on startup
+try:
+    load_models()
+    logger.info("✓ All models loaded successfully! App is ready.")
+except Exception as e:
+    logger.error(f"FATAL: Could not load models. App startup failed: {str(e)}")
+    sys.exit(1)
 
 @app.route('/')
 def home():
