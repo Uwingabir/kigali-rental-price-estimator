@@ -40,8 +40,8 @@ env/
 *.log
 
 # Generated model files (rebuilt by Render on deploy)
-best_model.joblib
-market_stats.joblib
+# best_model.joblib
+# market_stats.joblib
 
 # Generated chart images (regenerated when notebook is run)
 correlation_matrix.png
