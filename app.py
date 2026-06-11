@@ -31,11 +31,20 @@ def train_models_if_needed():
     if not os.path.exists(MODEL_PATH) or not os.path.exists(STATS_PATH):
         logger.info("Model files not found. Training models...")
         try:
-            from train_model import train_and_evaluate
-            train_and_evaluate()
+            import subprocess
+            result = subprocess.run([sys.executable, "train_model.py"], 
+                                  capture_output=True, 
+                                  text=True, 
+                                  cwd=BASE_DIR)
+            if result.returncode != 0:
+                logger.error(f"Training script failed with return code {result.returncode}")
+                logger.error(f"STDOUT: {result.stdout}")
+                logger.error(f"STDERR: {result.stderr}")
+                raise Exception(f"Training failed: {result.stderr}")
             logger.info("Model training completed successfully.")
+            logger.info(f"Training output: {result.stdout}")
         except Exception as e:
-            logger.error(f"Failed to train models: {str(e)}")
+            logger.error(f"Failed to train models: {str(e)}", exc_info=True)
             raise
 
 def load_models():
