@@ -8,17 +8,11 @@ A machine learning web application that predicts fair rental prices for resident
 - GitHub repository: https://github.com/Uwingabir/kigali-rental-price-estimator.git
 
 ## Screenshot Evidence
-Below are the two key screenshots that should display directly in the README once the image files are added to the repository.
 
 ![Estimator Form](screenshots/demo-1.png)
 
 ![Prediction Result](screenshots/demo-2.png)
 
-Please save your screenshots as:
-- `screenshots/demo-1.png` — estimator form before prediction
-- `screenshots/demo-2.png` — prediction result with fair market range and price assessment
-
-These images will then appear immediately in the README, without requiring a click.
 
 ## Project Goal
 This project was developed to solve a real-world problem in the Kigali housing market: rental prices are often inconsistent and difficult to evaluate. The web app gives tenants, landlords, and agents a data-driven way to estimate market value.
@@ -91,13 +85,7 @@ The following checks were run successfully during validation:
 - The model file was confirmed to exist and load successfully.
 - The deployed app returned valid prediction responses for multiple sample inputs.
 - The app was verified on the live Render deployment and locally through the Flask app.
-
-### Screenshots / Demo Evidence Expected for Submission
-- Screenshot 1: Home page showing the estimator form and input fields.
-- Screenshot 2: Prediction result showing predicted rent and fair market range.
-- Screenshot 3: Price comparison assessment showing Underpriced / Fair Market / Overpriced behavior.
-- Screenshot 4: Market Insights view showing charts and dataset statistics.
-
+- 
 ## Analysis of Results
 The results show that the project met its main objective of creating a practical rental-price estimation tool. The model is able to generate predictions based on property features and provide users with a clear market comparison. The app also demonstrates that machine learning can be applied to a real social and economic problem in Kigali.
 
