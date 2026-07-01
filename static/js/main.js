@@ -26,6 +26,19 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     });
 });
 
+function populateSampleData() {
+    document.getElementById('property_type').value = 'Apartment';
+    document.getElementById('location').value = 'Kacyiru';
+    document.getElementById('bedrooms').value = '3';
+    document.getElementById('bathrooms').value = '2';
+    document.getElementById('amenities_count').value = '4';
+    document.getElementById('furnished_status').value = 'Furnished';
+    document.getElementById('road_access').value = 'Good';
+    document.getElementById('parking').value = 'Yes';
+    document.getElementById('security').value = 'Yes';
+    // Leave listed_rent empty so user can optionally enter their own price to evaluate
+}
+
 // Helper Function: Increment/Decrement Input Counts
 function adjustValue(inputId, delta) {
     const input = document.getElementById(inputId);
@@ -47,6 +60,7 @@ function formatCurrency(num) {
 
 // Intercept Rent Estimator Form Submission
 const form = document.getElementById('estimator-form');
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -109,13 +123,19 @@ form.addEventListener('submit', async (e) => {
         
         // Handle Listed Rent Price Check
         const evalBox = document.getElementById('listed-evaluation-box');
+        
         if (resData.listed_rent !== null) {
+            // User provided a price to compare
             evalBox.classList.remove('hidden');
+            
+            // Show comparison-based assessment
             document.getElementById('val-listed-rent').innerText = formatCurrency(resData.listed_rent) + " RWF";
+            document.getElementById('val-model-mae').innerText = resData.model_mae ? `${formatCurrency(resData.model_mae)} RWF` : 'Not available';
             
             const statusTag = document.getElementById('val-price-status');
             statusTag.innerText = resData.price_status + " Rent";
-            statusTag.className = `status-tag ${resData.price_status.toLowerCase()}`;
+            const statusClass = resData.price_status.toLowerCase().replace(' ', '-');
+            statusTag.className = `status-tag ${statusClass}`;
             
             // Text comparison description
             const diffText = resData.price_diff_percent > 0 
@@ -124,13 +144,38 @@ form.addEventListener('submit', async (e) => {
             
             document.getElementById('val-price-diff').innerText = resData.price_diff_percent === 0 ? "exactly identical" : diffText;
             
+            const modelNote = document.getElementById('model-note');
+            if (modelNote) {
+                const maeText = resData.model_mae ? `The model's typical error is about ${formatCurrency(resData.model_mae)} RWF, so a larger gap can indicate a price that is unusually high or low for this market.` : 'Price assessment uses the model\'s estimated range and typical error level.';
+                modelNote.querySelector('span').innerText = maeText;
+            }
+            
             // Adjust pointer location on gauge (Middle is 50%. Underpriced: 5-50%. Overpriced: 50-95%)
             const pointer = document.getElementById('meter-pointer');
             let offset = 50 + (resData.price_diff_percent * 1.35); // Scale sensitivity
             offset = Math.max(5, Math.min(95, offset)); // Bound limits
             pointer.style.left = `${offset}%`;
         } else {
-            evalBox.classList.add('hidden');
+            // No price provided; show that the estimate is the fair market value
+            evalBox.classList.remove('hidden');
+            document.getElementById('val-listed-rent').innerText = 'Not provided';
+            document.getElementById('val-model-mae').innerText = resData.model_mae ? `${formatCurrency(resData.model_mae)} RWF` : 'Not available';
+            
+            const statusTag = document.getElementById('val-price-status');
+            statusTag.innerText = 'Fair Market Estimate';
+            statusTag.className = 'status-tag fair';
+            
+            document.getElementById('val-price-diff').innerText = 'This is the estimated fair market rent for the specified property.';
+            
+            const modelNote = document.getElementById('model-note');
+            if (modelNote) {
+                const maeText = resData.model_mae ? `The model's typical error is about ${formatCurrency(resData.model_mae)} RWF. Enter a listing price in the optional field to compare and see if it is underpriced, fair, or overpriced.` : 'Enter a listing price to compare against this estimate.';
+                modelNote.querySelector('span').innerText = maeText;
+            }
+            
+            // Center the pointer at fair market (50%)
+            const pointer = document.getElementById('meter-pointer');
+            pointer.style.left = '50%';
         }
         
         // Display result block

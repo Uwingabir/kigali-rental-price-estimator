@@ -152,33 +152,78 @@ def predict():
         
         logger.info(f"Input data prepared: {input_data.to_dict()}")
         
-        # Predict using pipeline
+        # Predict using pipeline (point estimate)
         predicted_val = pipeline.predict(input_data)[0]
         logger.info(f"Prediction successful: {predicted_val}")
-        
+
         # Post-process predictions: rent cannot be negative
         predicted_rent = max(0.0, float(predicted_val))
-        
-        # Calculate estimate range: e.g., standard confidence margin of ±12%
-        margin = 0.12
-        rent_min = round(predicted_rent * (1 - margin))
-        rent_max = round(predicted_rent * (1 + margin))
+
+        # Try to compute a model-based prediction interval when possible
+        # For RandomForestRegressor we can use per-tree predictions and take percentiles
+        rent_min = None
+        rent_max = None
+
+        try:
+            from sklearn.pipeline import Pipeline as _Pipeline
+
+            final_estimator = pipeline
+            X_trans = input_data
+
+            # If the pipeline is a scikit-learn Pipeline, extract the final estimator
+            if isinstance(pipeline, _Pipeline):
+                final_estimator = pipeline.steps[-1][1]
+                # transform inputs through the pipeline (all but last) if possible
+                if len(pipeline.steps) > 1 and hasattr(pipeline[:-1], 'transform'):
+                    X_trans = pipeline[:-1].transform(input_data)
+
+            # If final estimator exposes individual trees (RandomForest), build quantile interval
+            if hasattr(final_estimator, 'estimators_'):
+                # Collect each tree's prediction for the input and compute percentiles
+                tree_preds = np.vstack([est.predict(X_trans) for est in final_estimator.estimators_])
+                lower = float(np.percentile(tree_preds, 5))
+                upper = float(np.percentile(tree_preds, 95))
+                rent_min = round(max(0.0, lower))
+                rent_max = round(max(0.0, upper))
+        except Exception as e:
+            logger.debug(f"Could not compute ensemble interval: {e}")
+
+        # Fallback to a heuristic ±12% margin when model-based interval is not available
+        if rent_min is None or rent_max is None:
+            margin = 0.12
+            rent_min = round(predicted_rent * (1 - margin))
+            rent_max = round(predicted_rent * (1 + margin))
+
+        # If available, widen interval by the model's MAE to avoid incorrectly strict assessments
+        try:
+            mae = None
+            if market_stats:
+                # look for stored metrics produced by training
+                mae = market_stats.get('best_model_metrics', {}).get('MAE') or market_stats.get('mae')
+            if mae:
+                mae = float(mae)
+                rent_min = round(min(rent_min, predicted_rent - mae))
+                rent_max = round(max(rent_max, predicted_rent + mae))
+        except Exception:
+            pass
+
         predicted_rent = round(predicted_rent)
-        
-        # Assess listed price if provided
-        price_status = "Not Provided"
-        price_diff_percent = 0.0
-        
+
+        # Assess listed price if provided; otherwise mark as fair market baseline
         if listed_rent is not None:
             price_diff_percent = round(((listed_rent - predicted_rent) / predicted_rent) * 100, 1) if predicted_rent > 0 else 0
             if listed_rent < rent_min:
-                price_status = "Low"
+                price_status = "Underpriced"
             elif listed_rent > rent_max:
-                price_status = "High"
+                price_status = "Overpriced"
             else:
-                price_status = "Fair"
+                price_status = "Fair Market"
+        else:
+            # No comparison price entered; the estimate itself is the fair market value
+            price_status = "Fair Market"
+            price_diff_percent = 0.0
                 
-        return jsonify({
+        response_payload = {
             "status": "success",
             "predicted_rent": predicted_rent,
             "rent_min": rent_min,
@@ -186,7 +231,18 @@ def predict():
             "listed_rent": listed_rent,
             "price_status": price_status,
             "price_diff_percent": price_diff_percent
-        })
+        }
+
+        # Include model MAE if available to help users understand typical error magnitude
+        try:
+            if market_stats:
+                mae_val = market_stats.get('best_model_metrics', {}).get('MAE') or market_stats.get('mae')
+                if mae_val is not None:
+                    response_payload['model_mae'] = round(float(mae_val))
+        except Exception:
+            pass
+
+        return jsonify(response_payload)
         
     except ValueError as e:
         logger.error(f"Value error during prediction: {str(e)}")

@@ -107,11 +107,14 @@ def train_and_evaluate():
         'location_stats': location_stats.to_dict(orient='records'),
         'property_stats': property_stats.to_dict(orient='records'),
         'total_listings': len(df_clean),
-        'overall_avg_rent': float(df_clean[target_col].mean())
+        'overall_avg_rent': float(df_clean[target_col].mean()),
+        'evaluation_results': results,
+        'best_model_name': best_model_name,
+        'best_model_metrics': results.get(best_model_name, {})
     }
     
     joblib.dump(stats_data, 'market_stats.joblib')
-    print("Saved market stats to: market_stats.joblib")
+    print("Saved market stats to: market_stats.joblib (includes evaluation metrics)")
     
 if __name__ == '__main__':
     train_and_evaluate()

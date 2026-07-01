@@ -254,6 +254,45 @@ body {
     gap: 2rem;
 }
 
+/* Intro / Explainer Strip */
+.insight-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-card {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 1.1rem 1.2rem;
+}
+
+.info-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.info-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.info-card p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
 /* Form Styling */
 .form-row {
     display: flex;
@@ -377,13 +416,16 @@ select option {
 }
 
 /* Buttons */
-.submit-btn {
-    width: 100%;
-    background: var(--primary-gradient);
+.button-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.submit-btn, .secondary-btn {
     border: none;
     border-radius: 10px;
-    padding: 0.95rem;
-    color: white;
+    padding: 0.95rem 1rem;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
@@ -391,9 +433,14 @@ select option {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-    margin-top: 1.5rem;
     transition: all var(--transition-speed) ease;
+}
+
+.submit-btn {
+    flex: 1;
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
 .submit-btn:hover {
@@ -403,6 +450,17 @@ select option {
 
 .submit-btn:active {
     transform: translateY(0);
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
 }
 
 /* Results Panel Styling */
@@ -487,8 +545,18 @@ select option {
     border: 1px solid rgba(6, 182, 212, 0.25);
 }
 
+.result-note {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
 .price-output {
-    margin: 1.5rem 0;
+    margin: 1rem 0 1.5rem;
     display: flex;
     align-items: baseline;
     justify-content: center;
@@ -632,9 +700,10 @@ select option {
     text-transform: uppercase;
 }
 
-.status-tag.low { background-color: rgba(34, 197, 94, 0.15); color: var(--success); }
+.status-tag.underpriced { background-color: rgba(34, 197, 94, 0.15); color: var(--success); }
 .status-tag.fair { background-color: rgba(234, 179, 8, 0.15); color: var(--warning); }
-.status-tag.high { background-color: rgba(239, 68, 68, 0.15); color: var(--danger); }
+.status-tag.fair-market { background-color: rgba(234, 179, 8, 0.15); color: var(--warning); }
+.status-tag.overpriced { background-color: rgba(239, 68, 68, 0.15); color: var(--danger); }
 
 .model-meta {
     display: flex;
@@ -653,6 +722,19 @@ select option {
 
 .meta-item i {
     color: var(--success);
+}
+
+.model-note {
+    margin-top: 0.8rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
 }
 
 /* Hidden Class Utility */

@@ -57,6 +57,27 @@
 
             <!-- TAB 1: Rent Estimator -->
             <section id="estimator-tab" class="tab-panel active">
+                <div class="insight-strip">
+                    <div class="glass-card info-card">
+                        <div class="info-icon">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h4>Why this tool matters</h4>
+                            <p>Estimate fair rent quickly and compare a listing price with market-based expectations.</p>
+                        </div>
+                    </div>
+                    <div class="glass-card info-card">
+                        <div class="info-icon">
+                            <i class="fa-solid fa-diagram-project"></i>
+                        </div>
+                        <div>
+                            <h4>How it works</h4>
+                            <p>Enter property details, let the model estimate rent, and review whether the price is underpriced, fair, or overpriced.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid-container">
                     <!-- Input Form Panel -->
                     <div class="glass-card form-panel">
@@ -166,9 +187,11 @@
                                 <span class="form-tip">Enter an active listing rent to assess if it is fair market value</span>
                             </div>
 
-                            <button type="submit" class="submit-btn">
-                                <span class="btn-text">Estimate Price Range</span> <i class="fa-solid fa-arrow-right"></i>
-                            </button>
+                            <div class="button-row">
+                                <button type="submit" class="submit-btn">
+                                    <span class="btn-text">Estimate Price Range</span> <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </div>
                         </form>
                     </div>
 
@@ -190,6 +213,11 @@
                                 <h3>Predicted Monthly Rent</h3>
                             </div>
                             
+                            <div class="result-note">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <span>Estimated from historical Kigali listings and property features</span>
+                            </div>
+
                             <div class="price-output">
                                 <span class="currency">RWF</span>
                                 <span class="amount" id="val-predicted-rent">-</span>
@@ -243,6 +271,14 @@
                                     <i class="fa-solid fa-bullseye"></i>
                                     <span>Cross-Validated $R^2$: <strong>0.7808</strong></span>
                                 </div>
+                                <div class="meta-item">
+                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                    <span>Typical error: <strong id="val-model-mae">-</strong></span>
+                                </div>
+                            </div>
+                            <div class="model-note" id="model-note">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Price assessment uses the model's estimated range and typical error level.</span>
                             </div>
                         </div>
                     </div>
