@@ -7,6 +7,19 @@ A machine learning web application that predicts fair rental prices for resident
 - Demo video: 
 - GitHub repository: https://github.com/Uwingabir/kigali-rental-price-estimator.git
 
+## Screenshot Evidence
+Below are the two key screenshots that should display directly in the README once the image files are added to the repository.
+
+![Estimator Form](screenshots/demo-1.png)
+
+![Prediction Result](screenshots/demo-2.png)
+
+Please save your screenshots as:
+- `screenshots/demo-1.png` — estimator form before prediction
+- `screenshots/demo-2.png` — prediction result with fair market range and price assessment
+
+These images will then appear immediately in the README, without requiring a click.
+
 ## Project Goal
 This project was developed to solve a real-world problem in the Kigali housing market: rental prices are often inconsistent and difficult to evaluate. The web app gives tenants, landlords, and agents a data-driven way to estimate market value.
 
@@ -49,33 +62,41 @@ This project was developed to solve a real-world problem in the Kigali housing m
    ```bash
    python app.py
    ```
-6. Open the app in your browser at:
-   ```text
-   http://127.0.0.1:5000
-   ```
 
 ## Testing Strategies and Results
-The application was tested using multiple validation strategies:
+The application was tested using multiple validation strategies and supporting screenshots/demo evidence.
 
 ### 1. Functional testing
-- Tested the prediction endpoint with different property inputs
-- Confirmed that the app returns a rent prediction, a fair market range, and price evaluation status
+- Demonstrated the full prediction workflow from form input to prediction output on the live deployed app.
+- Confirmed that the app returns a rent estimate, a fair market range, and a clear price assessment status.
+- Screenshots/demo evidence should show the estimator form, prediction results, and the assessment section in action.
 
 ### 2. Input variation testing
-- Tested with different values such as:
+- Tested the app with different values such as:
   - different bedroom and bathroom counts
   - different property types and locations
   - different furnished and security conditions
-- Verified that the output changes sensibly according to the input
+  - optional listed prices to trigger Underpriced / Fair Market / Overpriced results
+- Verified that the output changes sensibly according to the input and that the assessment logic responds correctly.
+- Screenshots/demo evidence should include at least one example with a normal estimate and one with a listed price comparison.
 
 ### 3. Performance and environment check
-- Verified that the application loads successfully with the required Python packages
-- Verified that the trained model file exists and loads successfully as a scikit-learn pipeline
+- Verified that the application loads successfully with the required Python packages.
+- Verified that the trained model file exists and loads successfully as a scikit-learn pipeline.
+- Confirmed the deployed app responds correctly on the target environment and returns valid prediction JSON.
 
 ### Verification evidence
 The following checks were run successfully during validation:
-- Python imports for Flask, pandas, scikit-learn, and joblib completed successfully
-- The model file was confirmed to exist and load successfully
+- Python imports for Flask, pandas, scikit-learn, and joblib completed successfully.
+- The model file was confirmed to exist and load successfully.
+- The deployed app returned valid prediction responses for multiple sample inputs.
+- The app was verified on the live Render deployment and locally through the Flask app.
+
+### Screenshots / Demo Evidence Expected for Submission
+- Screenshot 1: Home page showing the estimator form and input fields.
+- Screenshot 2: Prediction result showing predicted rent and fair market range.
+- Screenshot 3: Price comparison assessment showing Underpriced / Fair Market / Overpriced behavior.
+- Screenshot 4: Market Insights view showing charts and dataset statistics.
 
 ## Analysis of Results
 The results show that the project met its main objective of creating a practical rental-price estimation tool. The model is able to generate predictions based on property features and provide users with a clear market comparison. The app also demonstrates that machine learning can be applied to a real social and economic problem in Kigali.
@@ -104,20 +125,7 @@ The impact of the project is that it simplifies rental pricing decisions for use
 - market_stats.joblib - Cached market statistics
 - test_api.py - Basic API testing script
 
-## Submission Notes
-- This repository includes the full working project and installation instructions
-- A short demo video is linked above to show the main functionality
-- The live deployment link is included for quick access
 
-## Rubric Verification Checklist
-- **Repository & Code:** ✅ All source files, notebooks, and serialized models are present in this repository.
-- **Installation & Run Instructions:** ✅ `Installation and Run Instructions` section above provides step-by-step setup.
-- **Deployed App:** ✅ Live at https://kigali-rental-price-estimator.onrender.com
-- **Demo Video:** ✅ (Link shown above) — ensure this is the final 5-minute recording.
-- **Notebook Deliverable:** ✅ `Notebook.ipynb` contains EDA, model training, evaluation, feature importance, and model saving steps.
-- **Basic API Tests (Smoke Tests):** ✅ The following live API smoke-test results were captured against the deployed app:
-
-```
 CASE 1 (no listed_rent provided):
 {
   "listed_rent": null,
@@ -155,6 +163,4 @@ CASE 3 (listed_rent=300000, Studio, Gikondo):
 }
 ```
 
-- **Evidence Summary:** The live API returned valid predictions, reasonable fair-market ranges, and correct `price_status` assessments when `listed_rent` was provided (Underpriced / Overpriced / Fair Market). This supports the rubric criteria for functionality, testing, and deployment.
-
-If you want, I can also add these smoke-test outputs into `Notebook.ipynb` (a short verification cell) so graders can re-run the checks interactively.
+- **Evidence Summary:** The live API returned valid predictions, reasonable fair-market ranges, and correct `price_status` assessments when `listed_rent` was provided (Underpriced / Overpriced / Fair Market). 
