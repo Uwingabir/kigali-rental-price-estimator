@@ -63,7 +63,7 @@ The application was tested using multiple validation strategies and supporting s
 ### 1. Functional testing
 - Demonstrated the full prediction workflow from form input to prediction output on the live deployed app.
 - Confirmed that the app returns a rent estimate, a fair market range, and a clear price assessment status.
-- Screenshots/demo evidence should show the estimator form, prediction results, and the assessment section in action.
+- Screenshots evidence  show the estimator form, prediction results, and the assessment section in action.
 
 ### 2. Input variation testing
 - Tested the app with different values such as:
@@ -72,7 +72,7 @@ The application was tested using multiple validation strategies and supporting s
   - different furnished and security conditions
   - optional listed prices to trigger Underpriced / Fair Market / Overpriced results
 - Verified that the output changes sensibly according to the input and that the assessment logic responds correctly.
-- Screenshots/demo evidence should include at least one example with a normal estimate and one with a listed price comparison.
+- Screenshots evidence should include at least one example with a normal estimate and one with a listed price comparison.
 
 ### 3. Performance and environment check
 - Verified that the application loads successfully with the required Python packages.
