@@ -4,7 +4,7 @@ A machine learning web application that predicts fair rental prices for resident
 
 ## Live Links
 - Live app: https://kigali-rental-price-estimator.onrender.com
-- Demo video: 
+- Demo video: https://youtu.be/1H0GiaiAW3Y
 - GitHub repository: https://github.com/Uwingabir/kigali-rental-price-estimator.git
 
 ## Screenshot Evidence
