@@ -1,14 +1,29 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 import pandas as pd
 import numpy as np
 import joblib
 import logging
 import os
 import sys
+import json
+import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Load .env if present (local development)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 from flask_cors import CORS
+import db
+
+# Initialize database tables & listings import
+db.init_db()
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "kigalirent-super-secret-key-123")
 
 # Configure basic logging to STDOUT
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -32,7 +47,7 @@ def load_models():
         try:
             logger.info(f"Loading trained model pipeline from {MODEL_PATH}...")
             pipeline = joblib.load(MODEL_PATH)
-            logger.info("✓ Model loaded successfully.")
+            logger.info("Model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load model: {str(e)}", exc_info=True)
             raise
@@ -44,7 +59,7 @@ def load_models():
         try:
             logger.info(f"Loading market statistics from {STATS_PATH}...")
             market_stats = joblib.load(STATS_PATH)
-            logger.info("✓ Market statistics loaded successfully.")
+            logger.info("Market statistics loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load market stats: {str(e)}", exc_info=True)
             raise
@@ -55,7 +70,7 @@ def load_models():
 # Load models on startup
 try:
     load_models()
-    logger.info("✓ All models loaded successfully! App is ready.")
+    logger.info("All models loaded successfully! App is ready.")
 except Exception as e:
     logger.error(f"FATAL: Could not load models. App startup failed: {str(e)}")
     sys.exit(1)
@@ -94,15 +109,12 @@ def home():
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    if not market_stats:
-        return jsonify({"error": "Market statistics not loaded"}), 500
-    
-    # Send stats to feed frontend dashboards and charts
+    stats = db.get_listings_stats()
     return jsonify({
-        "total_listings": market_stats.get('total_listings', 0),
-        "overall_avg_rent": market_stats.get('overall_avg_rent', 0),
-        "location_stats": market_stats.get('location_stats', [])[:12], # top 12 locations by average price
-        "property_stats": market_stats.get('property_stats', [])
+        "total_listings": stats.get('total_listings', 0),
+        "overall_avg_rent": stats.get('overall_avg_rent', 0),
+        "location_stats": stats.get('location_stats', [])[:12], # top 12 locations
+        "property_stats": stats.get('property_stats', [])
     })
 
 @app.route('/api/predict', methods=['POST'])
@@ -256,6 +268,353 @@ def predict():
             "status": "error",
             "message": f"Prediction error: {str(e)}"
         }), 500
+
+# ─── Seeding Admin & Demo Accounts ─────────────────────────────────────────────
+def seed_admin():
+    """Seed default admin and demo users if missing in DB."""
+    # Admin
+    if not db.find_user_by_username('admin'):
+        db.add_user("u_admin", "admin", "admin@kigalirent.com", generate_password_hash("admin123"), "admin", "active")
+        logger.info("Default Admin account seeded (admin / admin123).")
+
+    # Demo Seeker/Customer
+    if not db.find_user_by_username('seeker_demo'):
+        db.add_user("u_seeker_demo", "seeker_demo", "seeker.demo@kigalirent.com", generate_password_hash("seeker123"), "customer", "active")
+        logger.info("Demo Seeker account seeded (seeker_demo / seeker123).")
+
+    # Demo Agent/Commissioner
+    if not db.find_user_by_username('agent_demo'):
+        db.add_user("u_agent_demo", "agent_demo", "agent.demo@kigalirent.com", generate_password_hash("agent123"), "commissioner", "active")
+        logger.info("Demo Agent account seeded (agent_demo / agent123).")
+
+seed_admin()
+
+# ─── Twilio WhatsApp Helper ────────────────────────────────────────────────────
+def send_whatsapp_notification(inquiry: dict) -> tuple[bool, str]:
+    """
+    Send a formatted WhatsApp message to the commissioner via Twilio.
+    Returns (success: bool, message: str).
+    """
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
+    auth_token  = os.environ.get("TWILIO_AUTH_TOKEN", "")
+    from_number = os.environ.get("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
+    to_number   = os.environ.get("COMMISSIONER_WHATSAPP_NUMBER", "")
+
+    if not account_sid or not auth_token or not to_number:
+        logger.info("Twilio credentials not set — skipping WhatsApp notification.")
+        return False, "WhatsApp not configured"
+
+    try:
+        from twilio.rest import Client
+        client = Client(account_sid, auth_token)
+
+        prop = inquiry.get("property", {})
+        msg_body = (
+            f"*New Rental Inquiry — KigaliRent*\n\n"
+            f"Customer: {inquiry.get('name', 'N/A')}\n"
+            f"Phone: {inquiry.get('phone', 'N/A')}\n"
+            f"Email: {inquiry.get('email', 'N/A')}\n\n"
+            f"Property Interest:\n"
+            f"  - Type: {prop.get('property_type', 'N/A')}\n"
+            f"  - Location: {prop.get('location', 'N/A')}\n"
+            f"  - Bedrooms: {prop.get('bedrooms', 'N/A')} | Bathrooms: {prop.get('bathrooms', 'N/A')}\n"
+            f"  - Estimated Rent: {prop.get('rent_min', 'N/A'):,} - {prop.get('rent_max', 'N/A'):,} RWF/month\n\n"
+            f"Move-in Date: {inquiry.get('move_in_date', 'N/A')}\n"
+            f"Max Budget: {inquiry.get('budget', 'N/A')} RWF\n\n"
+            f"Notes: {inquiry.get('notes', 'None')}\n\n"
+            f"Sent via KigaliRent Estimator"
+        )
+
+        client.messages.create(
+            body=msg_body,
+            from_=from_number,
+            to=to_number
+        )
+        logger.info("WhatsApp notification sent to commissioner.")
+        return True, "WhatsApp sent"
+    except Exception as e:
+        logger.error(f"Twilio WhatsApp error: {e}")
+        return False, str(e)
+
+
+# ─── Authentication API Endpoints ─────────────────────────────────────────────
+@app.route('/login')
+def login_page():
+    """Render the Login/Signup page."""
+    return render_template('auth.html')
+
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    """Register a new customer or commissioner."""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        role = data.get('role', 'customer').strip()
+
+        if not username or not email or not password:
+            return jsonify({"error": "Missing required registration details"}), 400
+
+        if role not in ['customer', 'commissioner']:
+            return jsonify({"error": "Invalid role specified"}), 400
+
+        if db.find_user_by_username(username):
+            return jsonify({"error": "Username is already taken"}), 400
+        if db.find_user_by_email(email):
+            return jsonify({"error": "Email is already registered"}), 400
+
+        # Commissioners are created as pending_approval; Customers are active
+        status = "pending_approval" if role == 'commissioner' else "active"
+        user_id = "u_" + datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+
+        db.add_user(user_id, username, email, generate_password_hash(password), role, status)
+
+        msg = "Registration successful."
+        if role == 'commissioner':
+            msg += " Your agent account is pending approval by an administrator."
+
+        return jsonify({"status": "success", "message": msg, "role": role})
+
+    except Exception as e:
+        logger.error(f"Registration error: {e}", exc_info=True)
+        return jsonify({"error": f"Registration failed: {str(e)}"}), 500
+
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Authenticate user and initialize Flask session."""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+
+        if not username or not password:
+            return jsonify({"error": "Missing login credentials"}), 400
+
+        user = db.find_user_by_username(username)
+
+        if not user or not check_password_hash(user['password_hash'], password):
+            return jsonify({"error": "Invalid username or password"}), 401
+
+        # Restrict pending approval accounts
+        if user.get('status') == 'pending_approval':
+            return jsonify({"error": "Your agent account is pending approval by an administrator. Please try again later."}), 403
+        
+        if user.get('status') == 'suspended':
+            return jsonify({"error": "Your account has been suspended by an administrator."}), 403
+
+        # Set session
+        session.clear()
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        session['role'] = user['role']
+
+        return jsonify({
+            "status": "success",
+            "message": "Welcome back!",
+            "user": {
+                "id": user['id'],
+                "username": user['username'],
+                "role": user['role']
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Login error: {e}", exc_info=True)
+        return jsonify({"error": f"Login failed: {str(e)}"}), 500
+
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """Clear Flask session."""
+    session.clear()
+    return jsonify({"status": "success", "message": "Logged out successfully"})
+
+
+@app.route('/api/auth-state', methods=['GET'])
+def auth_state():
+    """Check current user session."""
+    if 'user_id' in session:
+        return jsonify({
+            "logged_in": True,
+            "user": {
+                "id": session['user_id'],
+                "username": session['username'],
+                "role": session['role']
+            }
+        })
+    return jsonify({"logged_in": False})
+
+
+# ─── Contact Commissioner Route ───────────────────────────────────────────────
+@app.route('/api/contact', methods=['POST'])
+def contact_commissioner():
+    """Receive a tenant inquiry, persist it, and notify the commissioner."""
+    if 'user_id' not in session or session.get('role') != 'customer':
+        return jsonify({"error": "Please sign in as a Customer to contact a commissioner."}), 401
+
+    try:
+        data = request.get_json()
+
+        # Validate required fields
+        required = ['name', 'phone', 'email']
+        missing = [f for f in required if not data.get(f, '').strip()]
+        if missing:
+            return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+
+        # Build inquiry record
+        inquiry = {
+            "id": datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S%f"),
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "customer_id": session['user_id'],
+            "customer_username": session['username'],
+            "name":         data.get('name', '').strip(),
+            "phone":        data.get('phone', '').strip(),
+            "email":        data.get('email', '').strip(),
+            "move_in_date": data.get('move_in_date', '').strip(),
+            "budget":       data.get('budget', '').strip(),
+            "notes":        data.get('notes', '').strip(),
+            "property": {
+                "property_type": data.get('property_type', 'Not specified'),
+                "location":      data.get('location', 'Not specified'),
+                "bedrooms":      data.get('bedrooms', 'N/A'),
+                "bathrooms":     data.get('bathrooms', 'N/A'),
+                "amenities_count": data.get('amenities_count', 'N/A'),
+                "furnished_status": data.get('furnished_status', 'N/A'),
+                "parking":       data.get('parking', 'N/A'),
+                "security":      data.get('security', 'N/A'),
+                "road_access":   data.get('road_access', 'N/A'),
+                "predicted_rent": data.get('predicted_rent'),
+                "rent_min":      data.get('rent_min'),
+                "rent_max":      data.get('rent_max'),
+            },
+            "whatsapp_sent": False
+        }
+
+        # Persist to SQLite
+        db.save_inquiry(inquiry)
+        logger.info(f"Inquiry saved: {inquiry['id']} from customer {session['username']}")
+
+        # Send WhatsApp
+        wa_ok, wa_msg = send_whatsapp_notification(inquiry)
+        if wa_ok:
+            db.update_inquiry_whatsapp_sent(inquiry["id"], True)
+            inquiry["whatsapp_sent"] = True
+
+        return jsonify({
+            "status": "success",
+            "message": "Your inquiry has been submitted. A commissioner will contact you soon.",
+            "whatsapp_sent": wa_ok,
+            "whatsapp_note": wa_msg
+        })
+
+    except Exception as e:
+        logger.error(f"Contact route error: {e}", exc_info=True)
+        return jsonify({"error": f"Could not submit inquiry: {str(e)}"}), 500
+
+
+# ─── Commissioner Dashboard Template Route ──────────────────────────────────
+@app.route('/dashboard')
+def dashboard():
+    """Render the separate Commissioner Dashboard page if logged in."""
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    return render_template('dashboard.html')
+
+
+# ─── Dynamic Dashboard Data Endpoint ──────────────────────────────────────────
+@app.route('/api/dashboard/data', methods=['GET'])
+def get_dashboard_data():
+    """Fetch analytics and tables relative to the logged-in user's role."""
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized access"}), 401
+
+    role = session['role']
+    user_id = session['user_id']
+
+    inquiries = db.load_inquiries()
+    users = db.load_users()
+
+    if role == 'customer':
+        # Customers only see their own inquiries
+        customer_inquiries = [i for i in inquiries if i.get('customer_id') == user_id]
+        return jsonify({
+            "role": "customer",
+            "inquiries": customer_inquiries,
+            "count": len(customer_inquiries)
+        })
+
+    elif role == 'commissioner':
+        # Commissioners see all inquiries
+        return jsonify({
+            "role": "commissioner",
+            "inquiries": inquiries,
+            "count": len(inquiries)
+        })
+
+    elif role == 'admin':
+        user_list = []
+        for u in users:
+            user_list.append({
+                "id": u.get('id'),
+                "username": u.get('username'),
+                "email": u.get('email'),
+                "role": u.get('role'),
+                "status": u.get('status'),
+                "created_at": u.get('created_at', '—')
+            })
+
+        total_customers = sum(1 for u in users if u.get('role') == 'customer')
+        total_commissioners = sum(1 for u in users if u.get('role') == 'commissioner')
+
+        return jsonify({
+            "role": "admin",
+            "stats": {
+                "total_users": len(users),
+                "total_customers": total_customers,
+                "total_commissioners": total_commissioners,
+                "total_inquiries": len(inquiries)
+            },
+            "users": user_list,
+            "inquiries": inquiries
+        })
+
+    return jsonify({"error": "Invalid role session"}), 400
+
+
+# ─── Admin Action Endpoint ───────────────────────────────────────────────────
+@app.route('/api/admin/toggle-user', methods=['POST'])
+def toggle_user_status():
+    """Admin endpoint to activate, suspend, or approve users."""
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({"error": "Admin credentials required"}), 403
+
+    try:
+        data = request.get_json()
+        target_id = data.get('user_id')
+        new_status = data.get('status') # 'active' or 'suspended'
+
+        if not target_id or new_status not in ['active', 'suspended']:
+            return jsonify({"error": "Invalid status toggle parameters"}), 400
+
+        user = db.find_user_by_id(target_id)
+        if not user:
+            return jsonify({"error": "Target user not found"}), 404
+        if user.get('role') == 'admin':
+            return jsonify({"error": "Cannot change status of an Admin account"}), 400
+
+        db.update_user_status(target_id, new_status)
+        return jsonify({
+            "status": "success",
+            "message": f"User status updated to {new_status} successfully."
+        })
+
+    except Exception as e:
+        logger.error(f"Admin toggle user error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     # Run locally on port 5000

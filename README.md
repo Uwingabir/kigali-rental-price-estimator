@@ -27,6 +27,8 @@ This project was developed to solve a real-world problem in the Kigali housing m
 - Property rent estimation from user input
 - Price evaluation against a predicted fair market range
 - Market insights dashboard with rental statistics and charts
+- **Contact Commissioner Form**: Pre-filled with estimated property parameters and sends a direct WhatsApp notification to the commissioner
+- **Commissioner Dashboard**: Gated by a security PIN, allowing commissioners to view and manage in-app inquiry records
 - Responsive web interface for easy use on desktop and mobile
 
 ## Technologies Used
@@ -35,30 +37,36 @@ This project was developed to solve a real-world problem in the Kigali housing m
 - scikit-learn
 - pandas / NumPy
 - joblib
-- HTML, CSS, JavaScript
+- Twilio WhatsApp API (for commissioner notifications)
+- python-dotenv
+- HTML, CSS (Vanilla), JavaScript
 - Chart.js
 - Render for deployment
 
 ## Installation and Run Instructions
-1. Clone the repository
+1. Clone the repository:
    ```bash
    git clone https://github.com/Uwingabir/kigali-rental-price-estimator.git
    cd kigali-rental-price-estimator
    ```
-2. Create and activate a virtual environment
+2. Create and activate a virtual environment:
    ```bash
    python -m venv venv
    venv\Scripts\activate
    ```
-3. Install dependencies
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-4. Train the model and generate market statistics
+4. Configure environment variables (Optional - for WhatsApp alerts):
+   - Copy `.env.template` to `.env`
+   - Fill in your Twilio Account SID, Auth Token, Sender number, and recipient Commissioner WhatsApp number.
+   - If not configured, the app will run with local JSON inquiry logging only (graceful fallback).
+5. Train the model and generate market statistics:
    ```bash
    python train_model.py
    ```
-5. Run the app locally
+6. Run the app locally:
    ```bash
    python app.py
    ```

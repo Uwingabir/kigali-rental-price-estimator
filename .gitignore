@@ -27,6 +27,16 @@ venv/
 env/
 .env/
 
+# Sensitive credentials (never commit this!)
+.env
+
+# Inquiry and user data (stored locally, not in version control)
+inquiries.json
+users.json
+kigalirent.db
+*.db
+
+
 # IDE files
 .vscode/
 .idea/

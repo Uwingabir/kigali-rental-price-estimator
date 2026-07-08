@@ -7,3 +7,5 @@ matplotlib>=3.8.2
 seaborn>=0.13.2
 gunicorn>=22.0.0
 flask-cors
+twilio>=9.0.0
+python-dotenv>=1.0.0
