@@ -17,12 +17,25 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Check if users table has old username column, drop if present to run migrations
+    try:
+        cursor.execute("PRAGMA table_info(users)")
+        cols = [r[1] for r in cursor.fetchall()]
+        if cols and "username" in cols:
+            print("Detected legacy users table (username-based). Recreating for phone-based auth...")
+            cursor.execute("DROP TABLE users")
+            cursor.execute("DROP TABLE inquiries")
+            conn.commit()
+    except Exception as e:
+        print(f"Migration check error: {e}")
+    
     # 1. Create users table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
+            phone TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            email TEXT,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL,
             status TEXT NOT NULL,
@@ -36,7 +49,7 @@ def init_db():
             id TEXT PRIMARY KEY,
             timestamp TEXT NOT NULL,
             customer_id TEXT NOT NULL,
-            customer_username TEXT,
+            customer_phone TEXT,
             name TEXT NOT NULL,
             phone TEXT NOT NULL,
             email TEXT NOT NULL,
@@ -134,11 +147,11 @@ def load_users():
     conn.close()
     return [dict(r) for r in rows]
 
-def find_user_by_username(username):
-    """Find a single user by username."""
+def find_user_by_phone(phone):
+    """Find a single user by phone number."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    cursor.execute("SELECT * FROM users WHERE phone = ?", (phone,))
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -161,16 +174,16 @@ def find_user_by_id(user_id):
     conn.close()
     return dict(row) if row else None
 
-def add_user(user_id, username, email, password_hash, role, status):
+def add_user(user_id, phone, name, email, password_hash, role, status):
     """Add a new user record."""
     conn = get_db_connection()
     cursor = conn.cursor()
     created_at = datetime.datetime.utcnow().isoformat() + "Z"
     try:
         cursor.execute('''
-            INSERT INTO users (id, username, email, password_hash, role, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (user_id, username, email, password_hash, role, status, created_at))
+            INSERT INTO users (id, phone, name, email, password_hash, role, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, phone, name, email, password_hash, role, status, created_at))
         conn.commit()
         success = True
     except sqlite3.IntegrityError:
@@ -224,7 +237,7 @@ def save_inquiry(inq):
     prop = inq.get("property", {})
     cursor.execute('''
         INSERT INTO inquiries (
-            id, timestamp, customer_id, customer_username, name, phone, email, 
+            id, timestamp, customer_id, customer_phone, name, phone, email, 
             move_in_date, budget, notes, property_type, location, bedrooms, 
             bathrooms, amenities_count, furnished_status, parking, security, 
             road_access, rent_min, rent_max, whatsapp_sent
@@ -233,7 +246,7 @@ def save_inquiry(inq):
         inq["id"],
         inq["timestamp"],
         inq["customer_id"],
-        inq.get("customer_username"),
+        inq.get("customer_phone"),
         inq["name"],
         inq["phone"],
         inq["email"],
@@ -321,7 +334,7 @@ def seed_realistic_inquiries():
             "id": "inq_20260708000001",
             "timestamp": "2026-07-08T09:30:00Z",
             "customer_id": "u_seeker_demo",
-            "customer_username": "seeker_demo",
+            "customer_phone": "+250788111111",
             "name": "Jean Luc Mugisha",
             "phone": "+250 788 123 456",
             "email": "j.mugisha@gmail.com",
@@ -345,7 +358,7 @@ def seed_realistic_inquiries():
             "id": "inq_20260708000002",
             "timestamp": "2026-07-07T18:05:00Z",
             "customer_id": "u_seeker_demo",
-            "customer_username": "seeker_demo",
+            "customer_phone": "+250788111111",
             "name": "Sandrine Uwera",
             "phone": "+250 785 654 321",
             "email": "s.uwera@workmail.rw",
@@ -369,7 +382,7 @@ def seed_realistic_inquiries():
             "id": "inq_20260708000003",
             "timestamp": "2026-07-06T14:22:00Z",
             "customer_id": "u_seeker_demo",
-            "customer_username": "seeker_demo",
+            "customer_phone": "+250788111111",
             "name": "David Mukunzi",
             "phone": "+250 782 333 444",
             "email": "david.m@kigalitech.co",
@@ -394,7 +407,7 @@ def seed_realistic_inquiries():
     for inq in realistic_data:
         cursor.execute('''
             INSERT INTO inquiries (
-                id, timestamp, customer_id, customer_username, name, phone, email, 
+                id, timestamp, customer_id, customer_phone, name, phone, email, 
                 move_in_date, budget, notes, property_type, location, bedrooms, 
                 bathrooms, amenities_count, furnished_status, parking, security, 
                 road_access, rent_min, rent_max, whatsapp_sent
@@ -403,7 +416,7 @@ def seed_realistic_inquiries():
             inq["id"],
             inq["timestamp"],
             inq["customer_id"],
-            inq["customer_username"],
+            inq["customer_phone"],
             inq["name"],
             inq["phone"],
             inq["email"],

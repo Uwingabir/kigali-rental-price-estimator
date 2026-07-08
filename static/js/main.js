@@ -537,10 +537,10 @@ async function checkAuthStateAndLoadDashboard() {
 
         if (data.logged_in) {
             currentUser = data.user;
-            if (sessionUsername) sessionUsername.innerText = currentUser.username;
+            if (sessionUsername) sessionUsername.innerText = currentUser.name;
             if (sessionRole) sessionRole.innerText = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
             if (sessionAvatar) {
-                sessionAvatar.innerText = currentUser.username.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+                sessionAvatar.innerText = currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
                 sessionAvatar.style.background = 'linear-gradient(135deg, #2FD36F, #12894A)';
             }
             if (logoutBtn) logoutBtn.style.display = 'flex';
@@ -595,7 +595,7 @@ async function checkAuthStateAndLoadDashboard() {
             
             // Set Page Title subhead
             const subtitleEl = document.getElementById('page-subtitle');
-            if (subtitleEl) subtitleEl.innerText = `Logged in as ${currentUser.username} (${currentUser.role})`;
+            if (subtitleEl) subtitleEl.innerText = `Logged in as ${currentUser.name} (${currentUser.role})`;
 
             // Toggle specific view panels
             const viewCustEl = document.getElementById('view-customer');
@@ -874,8 +874,11 @@ function renderAdminDashboard(data) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${formatTimestamp(u.created_at)}</td>
-                <td style="font-weight:600; color:white;">${escapeHtml(u.username)}</td>
-                <td>${escapeHtml(u.email)}</td>
+                <td>
+                    <strong style="color:white; display:block;">${escapeHtml(u.name)}</strong>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(u.phone)}</span>
+                </td>
+                <td>${escapeHtml(u.email || '—')}</td>
                 <td><span class="role-badge ${u.role}">${u.role}</span></td>
                 <td><span class="status-pill ${u.status}">${u.status.replace('_', ' ')}</span></td>
                 <td>${actionsHtml}</td>
@@ -994,24 +997,28 @@ function toggleSwitch(field) {
 
 // ── QUICK SWITCH DEMO ROLE SWITCHER ──
 async function demoSwitchRole(role) {
-    let username = '';
+    let phone = '';
     let password = '';
+    let name = '';
     if (role === 'customer') {
-        username = 'seeker_demo';
+        phone = '+250788111111';
         password = 'seeker123';
+        name = 'Caline Seeker';
     } else if (role === 'commissioner') {
-        username = 'agent_demo';
+        phone = '+250788222222';
         password = 'agent123';
+        name = 'Norah Agent';
     } else if (role === 'admin') {
-        username = 'admin';
+        phone = '+250788000000';
         password = 'admin123';
+        name = 'System Admin';
     }
 
     try {
         const response = await fetch('/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ phone, password })
         });
         const data = await response.json();
         
@@ -1023,12 +1030,13 @@ async function demoSwitchRole(role) {
             }
         } else {
             // If the user does not exist (e.g. users.json deleted), register them first
-            if (data.error && data.error.includes("Invalid username or password")) {
+            if (data.error && (data.error.includes("Invalid username or password") || data.error.includes("Invalid phone number or password"))) {
                 const registerUrl = '/api/register';
                 const regPayload = {
-                    username,
+                    phone,
                     password,
-                    email: `${username}@kigalirent.com`,
+                    name,
+                    email: `${role}@kigalirent.com`,
                     role: role === 'customer' ? 'customer' : 'commissioner'
                 };
                 
@@ -1043,7 +1051,7 @@ async function demoSwitchRole(role) {
                     const retryResponse = await fetch('/api/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password })
+                        body: JSON.stringify({ phone, password })
                     });
                     if (retryResponse.ok) {
                         window.location.href = (role === 'customer') ? '/' : '/dashboard';

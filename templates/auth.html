@@ -246,30 +246,39 @@
 
             <!-- Authentication Form -->
             <form id="auth-form" onsubmit="handleAuthSubmit(event)">
-                <!-- Username -->
+                <!-- Phone Number -->
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="phone">Phone Number</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-phone input-icon-fa"></i>
+                        <input type="text" id="phone" placeholder="e.g., +250788111111" required>
+                    </div>
+                </div>
+
+                <!-- Full Name (Only Signup) -->
+                <div class="form-group hidden" id="group-name">
+                    <label for="name">Full Name</label>
                     <div class="input-with-icon">
                         <i class="fa-solid fa-user input-icon-fa"></i>
-                        <input type="text" id="username" placeholder="Enter username" required>
+                        <input type="text" id="name" placeholder="Enter full name">
                     </div>
                 </div>
 
                 <!-- Email (Only Signup) -->
                 <div class="form-group hidden" id="group-email">
-                    <label for="email">Email Address</label>
+                    <label for="email">Email Address (Optional)</label>
                     <div class="input-with-icon">
                         <i class="fa-solid fa-envelope input-icon-fa"></i>
                         <input type="email" id="email" placeholder="Enter email address">
                     </div>
                 </div>
 
-                <!-- Password -->
+                <!-- Password / Pin -->
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <label for="password">Password or PIN</label>
                     <div class="input-with-icon">
                         <i class="fa-solid fa-lock input-icon-fa"></i>
-                        <input type="password" id="password" placeholder="Enter password" required>
+                        <input type="password" id="password" placeholder="Enter password or PIN" required>
                     </div>
                 </div>
 
@@ -287,16 +296,10 @@
 
                 <!-- Submit Button -->
                 <button type="submit" class="submit-btn" id="auth-submit-btn" style="width: 100%; margin-top: 1.8rem;">
-                    <span id="btn-text">Access Dashboard</span>
+                    <span id="btn-text">Access Portal</span>
                     <i class="fa-solid fa-arrow-right" style="margin-left: 0.25rem;"></i>
                 </button>
             </form>
-
-            <div class="back-link-wrapper">
-                <a href="/" class="back-link">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Estimator
-                </a>
-            </div>
         </div>
     </div>
 
@@ -312,25 +315,28 @@
 
             const tabLogin  = document.getElementById('tab-login');
             const tabSignup = document.getElementById('tab-signup');
+            const groupName = document.getElementById('group-name');
             const groupEmail = document.getElementById('group-email');
             const groupRole  = document.getElementById('group-role');
             const btnText    = document.getElementById('btn-text');
 
-            const emailInput = document.getElementById('email');
+            const nameInput = document.getElementById('name');
 
             if (mode === 'login') {
                 tabLogin.classList.add('active');
                 tabSignup.classList.remove('active');
+                groupName.classList.add('hidden');
                 groupEmail.classList.add('hidden');
                 groupRole.classList.add('hidden');
-                emailInput.required = false;
+                nameInput.required = false;
                 btnText.innerText = "Log In";
             } else {
                 tabLogin.classList.remove('active');
                 tabSignup.classList.add('active');
+                groupName.classList.remove('hidden');
                 groupEmail.classList.remove('hidden');
                 groupRole.classList.remove('hidden');
-                emailInput.required = true;
+                nameInput.required = true;
                 btnText.innerText = "Create Account";
             }
         }
@@ -343,15 +349,20 @@
             errorDiv.classList.add('hidden');
             successDiv.classList.add('hidden');
 
-            const username = document.getElementById('username').value.trim();
+            const phone = document.getElementById('phone').value.trim();
             const password = document.getElementById('password').value;
-            const email    = document.getElementById('email').value.trim();
-            const role     = data => document.getElementById('role').value;
 
             const url = currentMode === 'login' ? '/api/login' : '/api/register';
-            const payload = currentMode === 'login' 
-                ? { username, password } 
-                : { username, password, email, role: document.getElementById('role').value };
+            let payload = {};
+
+            if (currentMode === 'login') {
+                payload = { phone, password };
+            } else {
+                const name = document.getElementById('name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const role = document.getElementById('role').value;
+                payload = { phone, name, email, password, role };
+            }
 
             try {
                 const response = await fetch(url, {
@@ -367,8 +378,12 @@
                 }
 
                 if (currentMode === 'login') {
-                    // Redirect to dashboard page
-                    window.location.href = '/dashboard';
+                    // Redirect to estimator page if Seeker, otherwise dashboard
+                    if (data.user.role === 'customer') {
+                        window.location.href = '/';
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
                 } else {
                     // Show registration success
                     document.getElementById('auth-success-msg').innerText = data.message;

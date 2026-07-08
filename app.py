@@ -77,6 +77,9 @@ except Exception as e:
 
 @app.route('/')
 def home():
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+
     # Pass metadata categories to frontend dropdowns
     locations = []
     property_types = []
@@ -273,19 +276,19 @@ def predict():
 def seed_admin():
     """Seed default admin and demo users if missing in DB."""
     # Admin
-    if not db.find_user_by_username('admin'):
-        db.add_user("u_admin", "admin", "admin@kigalirent.com", generate_password_hash("admin123"), "admin", "active")
-        logger.info("Default Admin account seeded (admin / admin123).")
+    if not db.find_user_by_phone('+250788000000'):
+        db.add_user("u_admin", "+250788000000", "System Admin", "admin@kigalirent.com", generate_password_hash("admin123"), "admin", "active")
+        logger.info("Default Admin account seeded (+250788000000 / admin123).")
 
     # Demo Seeker/Customer
-    if not db.find_user_by_username('seeker_demo'):
-        db.add_user("u_seeker_demo", "seeker_demo", "seeker.demo@kigalirent.com", generate_password_hash("seeker123"), "customer", "active")
-        logger.info("Demo Seeker account seeded (seeker_demo / seeker123).")
+    if not db.find_user_by_phone('+250788111111'):
+        db.add_user("u_seeker_demo", "+250788111111", "Caline Seeker", "seeker.demo@kigalirent.com", generate_password_hash("seeker123"), "customer", "active")
+        logger.info("Demo Seeker account seeded (+250788111111 / seeker123).")
 
     # Demo Agent/Commissioner
-    if not db.find_user_by_username('agent_demo'):
-        db.add_user("u_agent_demo", "agent_demo", "agent.demo@kigalirent.com", generate_password_hash("agent123"), "commissioner", "active")
-        logger.info("Demo Agent account seeded (agent_demo / agent123).")
+    if not db.find_user_by_phone('+250788222222'):
+        db.add_user("u_agent_demo", "+250788222222", "Norah Agent", "agent.demo@kigalirent.com", generate_password_hash("agent123"), "commissioner", "active")
+        logger.info("Demo Agent account seeded (+250788222222 / agent123).")
 
 seed_admin()
 
@@ -349,27 +352,26 @@ def register():
     """Register a new customer or commissioner."""
     try:
         data = request.get_json()
-        username = data.get('username', '').strip()
+        phone = data.get('phone', '').strip()
+        name = data.get('name', '').strip()
         email = data.get('email', '').strip()
         password = data.get('password', '')
         role = data.get('role', 'customer').strip()
 
-        if not username or not email or not password:
+        if not phone or not name or not password:
             return jsonify({"error": "Missing required registration details"}), 400
 
         if role not in ['customer', 'commissioner']:
             return jsonify({"error": "Invalid role specified"}), 400
 
-        if db.find_user_by_username(username):
-            return jsonify({"error": "Username is already taken"}), 400
-        if db.find_user_by_email(email):
-            return jsonify({"error": "Email is already registered"}), 400
+        if db.find_user_by_phone(phone):
+            return jsonify({"error": "Phone number is already registered"}), 400
 
         # Commissioners are created as pending_approval; Customers are active
         status = "pending_approval" if role == 'commissioner' else "active"
         user_id = "u_" + datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
 
-        db.add_user(user_id, username, email, generate_password_hash(password), role, status)
+        db.add_user(user_id, phone, name, email, generate_password_hash(password), role, status)
 
         msg = "Registration successful."
         if role == 'commissioner':
@@ -387,16 +389,16 @@ def login():
     """Authenticate user and initialize Flask session."""
     try:
         data = request.get_json()
-        username = data.get('username', '').strip()
+        phone = data.get('phone', '').strip()
         password = data.get('password', '')
 
-        if not username or not password:
+        if not phone or not password:
             return jsonify({"error": "Missing login credentials"}), 400
 
-        user = db.find_user_by_username(username)
+        user = db.find_user_by_phone(phone)
 
         if not user or not check_password_hash(user['password_hash'], password):
-            return jsonify({"error": "Invalid username or password"}), 401
+            return jsonify({"error": "Invalid phone number or password"}), 401
 
         # Restrict pending approval accounts
         if user.get('status') == 'pending_approval':
@@ -408,7 +410,8 @@ def login():
         # Set session
         session.clear()
         session['user_id'] = user['id']
-        session['username'] = user['username']
+        session['phone'] = user['phone']
+        session['name'] = user['name']
         session['role'] = user['role']
 
         return jsonify({
@@ -416,7 +419,8 @@ def login():
             "message": "Welcome back!",
             "user": {
                 "id": user['id'],
-                "username": user['username'],
+                "phone": user['phone'],
+                "name": user['name'],
                 "role": user['role']
             }
         })
@@ -441,7 +445,8 @@ def auth_state():
             "logged_in": True,
             "user": {
                 "id": session['user_id'],
-                "username": session['username'],
+                "phone": session['phone'],
+                "name": session['name'],
                 "role": session['role']
             }
         })
@@ -469,7 +474,7 @@ def contact_commissioner():
             "id": datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S%f"),
             "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             "customer_id": session['user_id'],
-            "customer_username": session['username'],
+            "customer_phone": session['phone'],
             "name":         data.get('name', '').strip(),
             "phone":        data.get('phone', '').strip(),
             "email":        data.get('email', '').strip(),
@@ -495,7 +500,7 @@ def contact_commissioner():
 
         # Persist to SQLite
         db.save_inquiry(inquiry)
-        logger.info(f"Inquiry saved: {inquiry['id']} from customer {session['username']}")
+        logger.info(f"Inquiry saved: {inquiry['id']} from customer {session['name']}")
 
         # Send WhatsApp
         wa_ok, wa_msg = send_whatsapp_notification(inquiry)
@@ -559,7 +564,8 @@ def get_dashboard_data():
         for u in users:
             user_list.append({
                 "id": u.get('id'),
-                "username": u.get('username'),
+                "phone": u.get('phone'),
+                "name": u.get('name'),
                 "email": u.get('email'),
                 "role": u.get('role'),
                 "status": u.get('status'),
