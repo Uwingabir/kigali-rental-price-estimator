@@ -1789,3 +1789,83 @@ h1, h2, h3, h4, .logo-container, .brand-section h2, .submit-btn, .qty-btn, .pric
     }
 }
 
+/* ─── MOBILE & TABLET RESPONSIVENESS ─── */
+@media (max-width: 1024px) {
+    .split-pane-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem 1.2rem;
+        gap: 1.5rem;
+    }
+    
+    .brand-section {
+        margin-bottom: 1rem;
+        justify-content: center;
+    }
+    
+    .nav-menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .nav-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .main-content {
+        padding: 1.5rem 1.2rem;
+        max-height: none;
+        overflow-y: visible;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+        text-align: center;
+        width: 100%;
+    }
+    
+    .content-header > div {
+        width: 100%;
+    }
+    
+    .content-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    
+    /* Dynamically collapse all inline grid template columns to single column on mobile */
+    div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Donut chart stack */
+    .donut-container {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .donut-legend {
+        width: 100%;
+    }
+}
