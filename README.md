@@ -1,6 +1,6 @@
 # Kigali Rental Price Estimation System
 
-A machine learning web application that predicts fair rental prices for residential properties in Kigali, Rwanda. The system uses historical rental data and a trained Random Forest regressor to estimate monthly rent and evaluate whether a listed price is underpriced, fair, or overpriced.
+A machine learning web application that predicts fair rental prices for residential properties in Kigali, Rwanda. The system uses historical rental data and a trained Random Forest regressor to estimate market rent and classify listings as underpriced, fair market, or overpriced.
 
 ## Live Links
 - Live app: https://kigali-rental-price-estimator.onrender.com
@@ -15,7 +15,7 @@ A machine learning web application that predicts fair rental prices for resident
 
 
 ## Project Goal
-This project was developed to solve a real-world problem in the Kigali housing market: rental prices are often inconsistent and difficult to evaluate. The web app gives tenants, landlords, and agents a data-driven way to estimate market value.
+This project was developed to solve a real-world problem in the Kigali housing market: rental prices are often inconsistent and difficult to evaluate. The web app gives tenants, landlords, and agents a practical way to estimate fair rent using a machine learning model.
 
 ## Core Functionalities
 - Property rent estimation from user input
@@ -95,7 +95,7 @@ The following checks were run successfully during validation:
 - The app was verified on the live Render deployment and locally through the Flask app.
 - 
 ## Analysis of Results
-The results show that the project met its main objective of creating a practical rental-price estimation tool. The model is able to generate predictions based on property features and provide users with a clear market comparison. The app also demonstrates that machine learning can be applied to a real social and economic problem in Kigali.
+The results show that the project met its main objective of creating a practical rental-price estimation tool. The model is able to generate predictions based on property features and provide users with a useful market estimate.
 
 ## Discussion of Milestones and Impact
 The main milestones completed were:
@@ -104,7 +104,7 @@ The main milestones completed were:
 - Web application development
 - Deployment and testing
 
-The impact of the project is that it simplifies rental pricing decisions for users who may otherwise rely on guesswork or informal market knowledge. It supports more transparent and informed decision-making.
+The impact of the project is that it simplifies rental pricing decisions for users who may otherwise rely on guesswork or informal market knowledge. It supports more transparent and informed decision-making in Kigali's rental market.
 
 ## Recommendations and Future Work
 - Add more data from additional Kigali locations and newer listings
@@ -159,4 +159,4 @@ CASE 3 (listed_rent=300000, Studio, Gikondo):
 }
 ```
 
-- **Evidence Summary:** The live API returned valid predictions, reasonable fair-market ranges, and correct `price_status` assessments when `listed_rent` was provided (Underpriced / Overpriced / Fair Market). 
+- **Evidence Summary:** The live API returned valid predictions, reasonable fair-market ranges, and correct `price_status` assessments when `listed_rent` was provided (Underpriced / Overpriced / Fair Market).
